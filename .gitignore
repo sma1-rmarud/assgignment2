@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+
+# Dataset
+dataset/
+
+# Logs and outputs
+logs/
+generated_inputs/
