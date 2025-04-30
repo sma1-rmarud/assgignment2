@@ -7,7 +7,6 @@ from torch.optim import Adam
 import detectors
 import timm
 
-# 1. CIFAR-10 전처리
 transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465),
@@ -20,12 +19,11 @@ testset = datasets.CIFAR10(root='./dataset', train=False, download=True, transfo
 train_loader = DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
 test_loader = DataLoader(testset, batch_size=128, shuffle=False, num_workers=2)
 
-# 2. SupCon pretrained encoder 불러오기
 encoder = timm.create_model("resnet50_simclr_cifar10", pretrained=True)
 encoder.eval()  # Freeze를 위한 준비
 encoder.requires_grad_(False)  # 전체 freeze
 
-# 3. Linear classifier만 학습
+# Linear classifier만 학습
 class LinearClassifier(nn.Module):
     def __init__(self, encoder, num_classes=10):
         super().__init__()
@@ -41,11 +39,10 @@ class LinearClassifier(nn.Module):
 
 model = LinearClassifier(encoder).cuda()
 early_stop_acc = 0.94
-# 4. Optimizer는 fc만!
+
 optimizer = Adam(model.fc.parameters(), lr=1e-3)
 criterion = nn.CrossEntropyLoss()
 
-# 5. 학습 루프
 for epoch in range(200):
     model.train()
     correct = total = 0
@@ -66,13 +63,12 @@ for epoch in range(200):
     print(f"[Epoch {epoch+1}] Train Accuracy: {acc*100:.2f}%")
 
     if acc >= early_stop_acc:
-        print(f"🛑 Early stopping at epoch {epoch+1}: Accuracy reached {acc*100:.2f}%")
+        print(f"Early stopping at epoch {epoch+1}: Accuracy reached {acc*100:.2f}%")
         break
     
 torch.save(model.fc.state_dict(), 'linear_fc_simclr.pth')
-print("✅ 분류기 가중치 저장 완료.")
+print("분류기 가중치 저장 완료.")
 
-# 6. 평가
 model.eval()
 correct = total = 0
 with torch.no_grad():
@@ -83,4 +79,4 @@ with torch.no_grad():
         correct += (preds == labels).sum().item()
         total += labels.size(0)
 
-print(f"\n✅ Final Test Accuracy: {correct/total * 100:.2f}%")
+print(f"\nFinal Test Accuracy: {correct/total * 100:.2f}%")
